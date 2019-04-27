@@ -1,0 +1,59 @@
+/*
+ * Button colours chosen using https://convertingcolors.com/rgb-color-0_152_230.html
+ * The website recommends 20% darker colours of each used colour and also points out if the colour is web-safe
+ * meaning that it can be rendered correctly on most systems and doesn't need to be replaced by some default colour.
+ */
+.button {
+    -fx-text-fill: white;
+    -fx-pref-width: 250px;
+    -fx-background-color: #0098E6;
+}
+.button:hover {
+    -fx-border-color: #000E48;
+    -fx-background-color: #0066AE;
+}
+.button:pressed {
+   -fx-border-color: #000E48;
+   -fx-background-color: #003879;
+}
+
+/* text-field and password-field */
+.text-field {
+    -fx-text-fill: white;
+    -fx-max-width: 250px;
+    -fx-pref-width: 250px;
+    -fx-min-width: 250px;
+    -fx-background-color: #0098E6;
+}
+
+.text-field:focused {
+    -fx-background-color: #0066AE;
+}
+
+.text-field:hover {
+    -fx-border-color: #000E48;
+}
+
+/* combo box */
+.combo-box {
+    -fx-text-fill: white;
+    -fx-pref-width: 250px;
+    -fx-background-color: #0098E6;
+}
+
+/* hyperlink */
+.hyperlink {
+    -fx-text-fill: #0000EE;
+}
+
+.hyperlink:visited {
+    -fx-text-fill: #000E48;
+}
+
+/* vbox */
+.root {
+    /* top right bottom left (order of padding applied)
+     * -fx-start-margin: 20px 0 0 0;
+     */
+    -fx-background-color: #C9BFE4;
+}
