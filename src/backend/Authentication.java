@@ -59,13 +59,24 @@ public class Authentication {
      * Allow new user to register for the application
      * @param username
      * @param password
-     * @return -1 for error, 0 for fail due to username being taken, 1 for successful registration
+     * @return -1 for error, 0 for fail due to username being taken, 1 for successful registration,
+     *         2 for invalid username, 3 for invalid password.
      */
-    // todo - create username rules, fail if trailing spaces are present
     public int register(String username, String password){
         try {
             // check if vault exists, create it if it doesn't
             createPasswordVault();
+
+            if (!validateUsername(username)) {
+                System.out.println("Username must be only letters and numbers");
+                return 2;
+            }
+
+            if (!validatePassword(password)) {
+                System.out.println("Password requires a letter, a number and a special-character. Minimum password length is 8.");
+                return 3;
+            }
+
             // check if user exists
             if (userExists(username) != null) {
                 System.out.println("Username already taken.");
@@ -108,5 +119,51 @@ public class Authentication {
     private String encryptPassword(String password) {
         String base64password = Base64.getEncoder().encodeToString(password.getBytes());
         return base64password;
+    }
+
+    /**
+     * Checks if username is valid, usernames must contain only numbers and letters
+     * @param username
+     * @return boolean if username is valid
+     */
+    private boolean validateUsername(String username) {
+        // use regular expresion to ensure username is only letters and numbers
+        // regex source: https://stackoverflow.com/questions/33467536
+        return username.matches("^[a-zA-Z0-9]+$");
+    }
+
+    /**
+     * Checks if password is long enough
+     * @param password
+     * @return If password is strong enough
+     */
+    private boolean validatePassword(String password) {
+        boolean numbCheck = false;
+        boolean letterCheck = false;
+        boolean specialCharacterCheck = false;
+        boolean lengthCheck = password.length() > 7;
+
+        for(char c: password.toCharArray()) {
+            // Convert char to string and store in variable as its used many times
+            String current = c + "";
+
+            // special char check
+            if (!(current).matches("[\\w\\s]*")) {
+                specialCharacterCheck = true;
+            }
+
+            // number check
+            if (current.matches("\\d+")) {
+                numbCheck = true;
+            }
+
+            // letter check
+            if (current.matches("^[a-zA-Z]*$")) {
+                letterCheck = true;
+            }
+        }
+
+        // all 4 booleans have to be true or this will == false
+        return specialCharacterCheck && numbCheck && letterCheck && lengthCheck;
     }
 }

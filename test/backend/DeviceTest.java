@@ -23,7 +23,7 @@ public class DeviceTest {
     private final DeviceManager dm = new DeviceManager(username);
 
     @BeforeClass
-    public static void prepare() throws IOException {
+    public static void prepare() {
         // create a simulated device path
         File dFile = new File(devicePath);
         assertTrue(dFile.mkdirs());
@@ -47,7 +47,7 @@ public class DeviceTest {
 
 
     @Test
-    public void test2ReadId() throws IOException {
+    public void test2ReadId() {
         String id = dm.readId(devicePath);
         assertEquals(id.length(), "6af7a7cb75cd4c4a8df1e01bac96c963".length());
         // as dashes are removed manually, here they're added back
@@ -75,17 +75,33 @@ public class DeviceTest {
     @Test
     public void testRestore() throws IOException {
         dm.restore(devicePath);
+        File backupRestoreDir = new File(devicePath + File.separator + "restore" + File.separator);
+        // check that the restored directory exists, is a directory and contains files
+        assertTrue(backupRestoreDir.exists());
+        assertTrue(backupRestoreDir.isDirectory());
+        assertTrue(backupRestoreDir.listFiles().length > 0);
     }
 
     // test that no exception is thrown
     @Test
     public void test3Backup() throws IOException {
-        dm.backup(devicePath, "ID only for creating Device Obj");
+        dm.backup(devicePath);
     }
 
-//    @Test
-//    public void testSynchronise() {
-//
-//    }
+    // test that no exception is thrown
+    @Test
+    public void test4Synchronise() throws IOException {
+        dm.synchronise(devicePath);
+    }
+
+    @Test
+    public void test5SyncRestore() throws IOException {
+        dm.syncRestore(devicePath);
+        File syncRestoreDir = new File(devicePath + File.separator + "sync" + File.separator);
+        // check that the restored directory exists, is a directory and contains files
+        assertTrue(syncRestoreDir.exists());
+        assertTrue(syncRestoreDir.isDirectory());
+        assertTrue(syncRestoreDir.listFiles().length > 0);
+    }
 
 }

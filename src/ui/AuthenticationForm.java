@@ -50,7 +50,7 @@ public class AuthenticationForm {
         rootVBox.setAlignment(Pos.TOP_CENTER);
 
         // link for registering a new user. Control configuration
-        link.setText("Register User (CURRENT A TEST)");
+        link.setText("Register User");
         // todo
         //link.setOnAction();
 
@@ -147,6 +147,16 @@ public class AuthenticationForm {
                     alert.setTitle("Success");
                     alert.showAndWait();
                     switchToDeviceScene(username);
+                    break;
+                case 2:
+                    // invalid username, only chars and numbs allowed
+                    alert = new Alert(Alert.AlertType.ERROR, "Username can contain only character and numbers, please choose a different username");
+                    alert.show();
+                    break;
+                case 3:
+                    // invalid username, only chars and numbs allowed
+                    alert = new Alert(Alert.AlertType.ERROR, "Password requires a letter, a number and a special-character. Minimum password length is 8, please choose a different password");
+                    alert.show();
                     break;
                 default:
                     alert = new Alert(Alert.AlertType.ERROR, "Unknown problem during registration.\nPlease restart the application.");

@@ -1,16 +1,15 @@
 package backend;
 
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.filefilter.TrueFileFilter;
+
 import java.io.File;
-import java.io.FilenameFilter;
 import java.io.IOException;
 import java.nio.file.*;
 import java.text.Format;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 
 public class BackupManager {
 
@@ -30,6 +29,14 @@ public class BackupManager {
     }
 
     /**
+     * Returns sync location
+     * @return
+     */
+    private String getSyncLocation() {
+        return System.getProperty("user.home") + File.separator + "Desktop" +  File.separator + "syncs" + File.separator + user;
+    }
+
+    /**
      * Creates a full backup of the device's files to backup location.
      * @param device The device which is being backed up
      */
@@ -43,7 +50,6 @@ public class BackupManager {
         // source: https://stackoverflow.com/questions/2056221/recursively-list-files-in-java
         Files.walk(Paths.get(device.getPath()))
              .forEach(currentFile -> backFileUp(currentFile, device.getPath()));
-        // for(File f: device.)
 
         Logger.addToLog(user, new Date() + " Full backup completed");
     }
@@ -57,18 +63,27 @@ public class BackupManager {
 
         Format formatter = new SimpleDateFormat("yyyy-MM-dd");
         String latestSnapshotDir = getBackupLocation() + File.separator + formatter.format(snapshotDate);
-        String restoreDir = pathToDevice + "restore" + File.separator + formatter.format(snapshotDate);
+        String restoreDir = pathToDevice + File.separator + "restore" + File.separator + formatter.format(snapshotDate);
         // get all the files in latest snapshot
         // Finds all files in a specified directory recursively, requires java 8
         // source: https://stackoverflow.com/questions/2056221/recursively-list-files-in-java
-
         Files.walk(Paths.get(latestSnapshotDir))
                 .forEach(currentFile -> restoreToDevice(currentFile, Paths.get(restoreDir + File.separator + currentFile.getFileName())));
+
         // for every file in the latest backup
         // check if restored folder exists
         // restore file to device in "restored" folder
-
         Logger.addToLog(user, new Date() + " Completed restore");
+    }
+
+    public void syncRestore(Device device) throws IOException {
+        Format formatter = new SimpleDateFormat("yyyy-MM-dd");
+        String restoreDir = device.getPath() + File.separator + "sync" + File.separator + formatter.format(new Date());
+        Files.walk(Paths.get(getSyncLocation()))
+                .forEach(currentFile -> restoreToDevice(currentFile, Paths.get(restoreDir + File.separator + currentFile.getFileName())));
+
+        // log success
+        Logger.addToLog(user, new Date() + " Completed sync-based restore");
     }
 
     private void restoreToDevice(Path fromSnapshot, Path restoreFile) {
@@ -96,9 +111,12 @@ public class BackupManager {
 
     }
 
+    /**
+     * Finds latest snapshot backed up for a specific user.
+     * @return
+     */
     private Date findLatestSnapshot() {
         // list all files in backup location, exclude anything that isn't a backup directory
-//        getBackupLocation()
         File file = new File(getBackupLocation());
         // lists all files for a given path
         // filters out anything that isn't a directory
@@ -129,8 +147,64 @@ public class BackupManager {
         return snapshotDates.get(0);
     }
 
-    public void Synchronise() {
+    public void synchronise(Device device) throws IOException {
         Logger.addToLog(user, new Date() + " Started file sync");
+
+        // location of the sync folder used for backed up files via synchronisation
+        String syncLocation = getSyncLocation();
+        // create sync dir if it doesn't exist
+        File syncDir = new File(syncLocation);
+        if (!syncDir.exists()) {
+            syncDir.mkdirs();
+        }
+
+        // list all files on device,
+        // 1st filter is for extensions, no extensions are filtered
+        // 2nd filter is for whether to list recursively, subfolders need to be backedup so yes to recursive
+        Collection<File> currentFiles = FileUtils.listFiles(new File(device.getPath()), TrueFileFilter.TRUE, TrueFileFilter.TRUE);
+
+
+        // list all the files in the sync
+        Collection<File> synchedFiles = FileUtils.listFiles(new File(syncLocation), TrueFileFilter.TRUE, TrueFileFilter.TRUE);
+
+        // loop over current files and see if they match synchedFiles
+        for (File f : currentFiles) {
+            System.out.println("file: " + f);
+
+            File syncFile = new File(syncLocation + File.separator + f.getName());
+
+            // check if the sync file's size matches the size of current file from the device
+            // necessary to ensure that an updated version of the file isn't removed
+            // can get unlucky, this should check something more accurate like described below:
+            // https://stackoverflow.com/questions/304268/getting-a-files-md5-checksum-in-java
+            boolean fileSizesMatch = f.getTotalSpace() == syncFile.getTotalSpace();
+            if (synchedFiles.contains(f) && fileSizesMatch) {
+                // any files that are synced can be removed from current files as they don't need to be re-synced
+                currentFiles.remove(f);
+            } else {
+                // otherwise if the sync doesn't contain the file it should remove it from disk
+                boolean deleted = false;
+                // if the file isn't a directory remove it
+                // otherwise if the directory is empty, delete it
+                if (!syncFile.isDirectory()) {
+                    deleted = syncFile.delete();
+                } else if (syncFile.listFiles().length == 0) {
+                    deleted = syncFile.delete();
+                }
+
+                // this is a ternary operator, allows to condense an if-else statement
+                // source: https://stackoverflow.com/a/16876728
+                // most likely wont reach due to exception, but still nice to have
+                System.out.println(deleted ? "Deleted successfully" : "Failed to delete");
+            }
+        }
+
+        // anything that remains needs to be synced
+        for (File f : currentFiles) {
+            // copy current file to the sync location, keep the file name the same
+            FileUtils.copyFile(f, new File(syncLocation + File.separator + f.getName()));
+        }
+
         Logger.addToLog(user, new Date() + " Completed file sync");
     }
 

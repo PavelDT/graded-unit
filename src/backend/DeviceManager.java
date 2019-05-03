@@ -11,7 +11,7 @@ import java.util.List;
 import java.util.UUID;
 import javax.swing.filechooser.FileSystemView;
 
-public class DeviceManager {
+public class DeviceManager implements BackupApp {
 
     private final String ID_FILE_NAME = "id-tag.txt";
     private String user;
@@ -44,22 +44,21 @@ public class DeviceManager {
      * @throws IOException
      */
     // todo - list only external devices, dont list OS drive and dont list CD Drives / DVD drives etc.
-    // todo - USE A MAP where k=path v=Device object
-    public List<Device>scanForDevices() throws IOException{
+    public List<Device>scanForDevices() {
 
         List<Device> devices = new ArrayList<Device>();
 
         FileSystemView fsv = FileSystemView.getFileSystemView();
-        File[] devicePaths = File.listRoots();
+        File[] devicePaths = null;
+        // different OS' represent devices differently
+        if (OSUtility.isWindows()) {
+            devicePaths = File.listRoots();
+        }
+        else if (OSUtility.isMac()) {
+            devicePaths = new File("/Volumes").listFiles();
+        }
 
         for (File devicePath : devicePaths) {
-            // todo - remove System.out.println's, used for dbugging
-            System.out.println("Drive Letter: " + devicePath);
-            System.out.println("\tType: " + fsv.getSystemTypeDescription(devicePath));
-            System.out.println("\tTotal space: " + devicePath.getTotalSpace());
-            System.out.println("\tFree space: " + devicePath.getFreeSpace());
-            System.out.println();
-
             if (devicePath.getTotalSpace() > 0) {
                 String path = devicePath.toString();
                 // determine id by using readId function
@@ -71,12 +70,7 @@ public class DeviceManager {
             }
         }
 
-
         return devices;
-    }
-
-    public boolean displayDeviceStatus(String status){
-        return false;
     }
 
     public void restore(String pathToDevice, String date) throws IOException {
@@ -90,16 +84,21 @@ public class DeviceManager {
         backupManager.restore(pathToDevice);
     }
 
-    public void backup(String path, String id) throws IOException{
-        Device device = new Device(path, id);
+    public void syncRestore(String path) throws IOException {
+        Device device = new Device(path, readId(path));
+        backupManager.syncRestore(device);
+    }
+
+    public void backup(String path) throws IOException {
+        Device device = new Device(path, readId(path));
         backupManager.createBackup(device);
     }
 
-    public void synchronise(String id){
-
+    public void synchronise(String path) throws IOException {
+        backupManager.synchronise(new Device(path, readId(path)));
     }
 
-    private String generateId(){
+    private String generateId() {
         String uuid = UUID.randomUUID().toString().replace("-", "");
         return uuid;
     }
@@ -110,7 +109,7 @@ public class DeviceManager {
      * @throws IOException - push the exception to caller function, shouldn't be handled here
      * @return Id of device
      */
-    public String readId(String devicePath) throws IOException {
+    public String readId(String devicePath) {
         Path path = Paths.get(devicePath + ID_FILE_NAME);
         // No id, this is a new device, return placeholder id.
         if (!path.toFile().exists()) {
@@ -118,6 +117,11 @@ public class DeviceManager {
         }
 
         // return device id
-        return new String(Files.readAllBytes(path));
+        try {
+            return new String(Files.readAllBytes(path));
+        } catch (IOException ex) {
+            ex.printStackTrace();
+            return "error";
+        }
     }
 }

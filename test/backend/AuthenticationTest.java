@@ -13,8 +13,8 @@ import static org.junit.Assert.assertEquals;
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class AuthenticationTest {
 
-    private static final String username = "a64c7652-68f0-11e9-a923-1681be663d3e_" + new Date().getTime();
-    private static final String password = "1234567";
+    private static final String username = "a64c765268f011e9a9231681be663d3e" + new Date().getTime();
+    private static final String password = "@aa1234567@@";
     private final Authentication auth = new Authentication();
 
     @Test
@@ -23,6 +23,13 @@ public class AuthenticationTest {
         assertEquals(auth.register(username, password), 1);
         // check that the username now exists, 0 = usr name take
         assertEquals(auth.register(username, password), 0);
+        // check that invalid usernames are disallowed
+        assertEquals(auth.register("____", password), 2);
+        // check invalid passwords fail
+        assertEquals(auth.register(username, "longPWbutnoSp3cialChar"), 3);
+        // check too short paswords fail
+        assertEquals(auth.register(username, "!_a33"), 3);
+
     }
 
     @Test

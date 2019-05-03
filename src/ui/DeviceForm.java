@@ -3,6 +3,7 @@ package ui;
 import backend.Device;
 import backend.DeviceManager;
 import backend.Logger;
+import javafx.beans.value.ChangeListener;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
@@ -15,11 +16,10 @@ import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.stage.Stage;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Observable;
+import java.util.*;
 
 public class DeviceForm {
 
@@ -28,25 +28,20 @@ public class DeviceForm {
     private Scene scene;
     private DeviceManager deviceManager;
     private String username;
-    private List<Device> allDevices;
+    // instance controls
     private ComboBox<String> comboDevices;
+    private Label labelDeviceInfo;
+    private Button btnRegisterDevice;
+    private Button btnBackup;
+    private Button btnSync;
+    private Button btnRestore;
 
-    //construncotr
+    //constructor
     public DeviceForm(Stage priamryStage, String username) {
         this.primaryStage = priamryStage;
         menu = generateMenu();
         this.username = username;
         deviceManager = new DeviceManager(username);
-        initializeDevices();
-    }
-
-    private void initializeDevices() {
-        try {
-            allDevices = deviceManager.scanForDevices();
-        } catch (Exception ex) {
-            System.out.println("Couldn't find devices");
-            ex.printStackTrace();
-        }
     }
 
     /**
@@ -55,7 +50,8 @@ public class DeviceForm {
      */
     private ObservableList<String> devicesAsString() {
         List<String> devicesAsString = new ArrayList<String>();
-        for (Device currentDevice : allDevices) {
+        // scan for devices every time
+        for (Device currentDevice : deviceManager.scanForDevices()) {
             devicesAsString.add(currentDevice.getPath());
         }
         return FXCollections.observableArrayList(devicesAsString);
@@ -78,20 +74,30 @@ public class DeviceForm {
         comboDevices = ControlFactory.getComboBox("", "List of detected devices connected to machine.");
         // setting values of combo box
         comboDevices.setItems(devicesAsString());
+        comboDevices.valueProperty().addListener(comboDevicesChanged());
         // label to describe the currently selected device.
         // Will update every time a new device is selected.
-        Label labelDeviceInfo = ControlFactory.getLabel("device info: Select Device", "Describes information about currently selected device.");
+        labelDeviceInfo = ControlFactory.getLabel("device info: Select Device", "Describes information about currently selected device.");
         // Register device button
-        Button btnRegisterDevice = ControlFactory.getButton("Register New Device", "Registers a new device.");
+        btnRegisterDevice = ControlFactory.getButton("Register New Device", "Registers a new device.");
         btnRegisterDevice.setOnAction(registerDevice());
+        // disabled until an unregistered device is selected
+        btnRegisterDevice.setDisable(true);
         // Backup button
-        Button btnBackup = ControlFactory.getButton("Backup Device", "Backs up currently selected device.");
+        btnBackup = ControlFactory.getButton("Backup Device", "Backs up currently selected device.");
+        // disabled until a registered device is selected
         btnBackup.setOnAction(backup());
+        // disabled until a registered device is selected
+        btnBackup.setDisable(true);
         // Sync button
-        Button btnSync = ControlFactory.getButton("Synchronise Device", "Synchronises currently selected divice");
+        btnSync = ControlFactory.getButton("Synchronise Device", "Synchronises currently selected divice");
+        // disabled until a registered device is selected
+        btnSync.setOnAction(sync());
+        btnSync.setDisable(true);
         // Restore button
-        Button btnRestore = ControlFactory.getButton("Restore Device", "Creates backup of existing device");
+        btnRestore = ControlFactory.getButton("Restore Device", "Creates backup of existing device");
         btnRestore.setOnAction(restore());
+        btnRestore.setDisable(true);
         // View Logs link
         Hyperlink linkViewLogs  = ControlFactory.getHyperlink("View Device Logs", "Displays device logs.");
         linkViewLogs.setOnAction(showLogs());
@@ -140,6 +146,12 @@ public class DeviceForm {
                 String id = deviceManager.registerNew(getComboboxValue());
                 Alert alert = new Alert(Alert.AlertType.INFORMATION, "Registered device successfully with ID " + id);
                 alert.show();
+                // disable "register new"
+                btnRegisterDevice.setDisable(true);
+                // enable "backup", "sync" and "restore".
+                btnBackup.setDisable(false);
+                btnSync.setDisable(false);
+                btnRestore.setDisable(false);
             } catch(Exception ex){
                 //notifies user of problem and displays first line of exception in an alert.
                 Alert alert = new Alert(Alert.AlertType.ERROR, "Error registering a device " + ex.getMessage());
@@ -157,12 +169,30 @@ public class DeviceForm {
         return event -> {
             try {
                 String path = getComboboxValue();
-                String id = deviceManager.readId(path);
-                deviceManager.backup(path, id);
+                deviceManager.backup(path);
                 Alert alert = new Alert(Alert.AlertType.INFORMATION, "Backup successful");
                 alert.show();
             } catch (IOException ex) {
                 Alert alert = new Alert(Alert.AlertType.ERROR, "Error during backup " + ex.getMessage());
+                alert.show();
+                ex.printStackTrace();
+            }
+        };
+    }
+
+    /**
+     * Syncs previously unsynced files (aka dirty files) to the sync folder
+     * @return Event handler for syncing dirty files to device
+     */
+    private EventHandler<ActionEvent> sync() {
+        return event -> {
+            try {
+                String devicePath = getComboboxValue();
+                deviceManager.synchronise(devicePath);
+                Alert alert = new Alert(Alert.AlertType.INFORMATION, "Sync successful");
+                alert.show();
+            } catch (IOException ex) {
+                Alert alert = new Alert(Alert.AlertType.ERROR, "Error during sync " + ex.getMessage());
                 alert.show();
                 ex.printStackTrace();
             }
@@ -176,8 +206,24 @@ public class DeviceForm {
     private EventHandler<ActionEvent> restore() {
         return event -> {
             try {
-                deviceManager.restore(getComboboxValue());
-                Alert alert = new Alert(Alert.AlertType.INFORMATION, "Restore successful");
+                // Create an alert for the type of retoration
+                Alert alert = new Alert(Alert.AlertType.CONFIRMATION, "Choose restoration type.");
+                alert.setTitle("Choose restore method");
+                alert.setHeaderText("Do you want to restore from the last full snapshot, or from they sync folder?");
+
+                ButtonType btnSyncBased = new ButtonType("Sync");
+                ButtonType btnBackupBased = new ButtonType("Backup");
+
+                alert.getButtonTypes().setAll(btnSyncBased, btnBackupBased);
+                Optional<ButtonType> result = alert.showAndWait();
+
+                if (result.get() == btnSyncBased) {
+                    deviceManager.syncRestore(getComboboxValue());
+                } else if (result.get() == btnBackupBased) {
+                    deviceManager.restore(getComboboxValue());
+                }
+
+                alert = new Alert(Alert.AlertType.INFORMATION, "Restore successful");
                 alert.show();
             } catch (IOException ex) {
                 Alert alert = new Alert(Alert.AlertType.ERROR, "Error during restore " + ex.getMessage());
@@ -200,6 +246,59 @@ public class DeviceForm {
             alert.getDialogPane().setMinHeight(Region.USE_PREF_SIZE);
             alert.setTitle("Log");
             alert.show();
+        };
+    }
+
+    /**
+     * Updates the device info label to represent the status of the newly selected device
+     * Note: this can lead to a IndexOutOfBoundsException in the JavaFX threading, the exception won't
+     *       crash the application but will lead to a error not being displayed.
+     * @return ChangeListener that stores functionality to update label when comboboxDevice's value changes
+     */
+    private ChangeListener<String> comboDevicesChanged() {
+        return (observableValue, oldValue, newValue) -> {
+            String status = deviceManager.readId(newValue + File.separator);
+            String msg = "Status unknown";
+
+            if (status.equals("error")) {
+                // update info status
+                msg = "Error reading device status";
+                labelDeviceInfo.setTextFill(Color.RED);
+
+                // disable "register new", "backup", "sync" and "restore".
+                btnRegisterDevice.setDisable(true);
+                btnBackup.setDisable(true);
+                btnSync.setDisable(true);
+                btnRestore.setDisable(true);
+            } else if (status.equals("new")) {
+                // update info status
+                msg = "Unregistered device detected";
+                labelDeviceInfo.setTextFill(Color.DARKCYAN);
+
+                // disable "backup", "sync" and "restore".
+                btnBackup.setDisable(true);
+                btnSync.setDisable(true);
+                btnRestore.setDisable(true);
+                // enable "register new"
+                btnRegisterDevice.setDisable(false);
+            } else if (status.length() == 32) {
+                // update info status
+                msg = "Registered device detected";
+                labelDeviceInfo.setTextFill(Color.GREEN);
+
+                // disable "register new"
+                btnRegisterDevice.setDisable(true);
+                // enable "backup", "sync" and "restore".
+                btnBackup.setDisable(false);
+                btnSync.setDisable(false);
+                btnRestore.setDisable(false);
+            } else {
+                labelDeviceInfo.setTextFill(Color.BLACK);
+            }
+
+            // ensure a refresh of device list
+            comboDevices.setItems(devicesAsString());
+            this.labelDeviceInfo.setText("device info: " + msg);
         };
     }
 
