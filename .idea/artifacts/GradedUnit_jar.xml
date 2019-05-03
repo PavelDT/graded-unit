@@ -1,8 +1,0 @@
-<component name="ArtifactManager">
-  <artifact type="jar" name="GradedUnit:jar">
-    <output-path>$PROJECT_DIR$/out/artifacts/GradedUnit_jar</output-path>
-    <root id="archive" name="GradedUnit.jar">
-      <element id="module-output" name="GradedUnit" />
-    </root>
-  </artifact>
-</component>
