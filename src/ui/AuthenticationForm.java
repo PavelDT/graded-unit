@@ -113,6 +113,8 @@ public class AuthenticationForm {
         return event -> {
             // hide login button
             btnLogin.setVisible(false);
+            // prevent the button from being triggered via Enter key press
+            btnLogin.setDisable(true);
             // hide register link
             link.setVisible(false);
             // show register button
@@ -215,9 +217,6 @@ public class AuthenticationForm {
         // hide current form
         primaryStage.hide();
 
-        // 360
-        //510
-
         // display the device form.
         primaryStage.setTitle("Device Form");
         primaryStage.setScene(new DeviceForm(primaryStage, username).getScene());
@@ -242,12 +241,10 @@ public class AuthenticationForm {
         menuItem1.setOnAction(changeTheme("/ui/assets/style.css"));
         MenuItem menuItem2 = new MenuItem("Dark Mode");
         menuItem2.setOnAction(changeTheme("/ui/assets/dark.css"));
-        MenuItem menuItem3 = new MenuItem("Colour-blind Mode");
         // todo
         // menuItem3.setOnAction(changeColourTest("/ui/assets/colourblind.css"));
         menuItem.getItems().add(menuItem1);
         menuItem.getItems().add(menuItem2);
-        menuItem.getItems().add(menuItem3);
 
         // http://tutorials.jenkov.com/javafx/menubar.html
         menuBar.getMenus().add(menuItem);

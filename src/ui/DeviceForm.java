@@ -3,9 +3,11 @@ package ui;
 import backend.Device;
 import backend.DeviceManager;
 import backend.Logger;
+
 import javafx.beans.value.ChangeListener;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.concurrent.Task;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.geometry.Insets;
@@ -35,6 +37,7 @@ public class DeviceForm {
     private Button btnBackup;
     private Button btnSync;
     private Button btnRestore;
+    private ProgressBar progressBar;
 
     //constructor
     public DeviceForm(Stage priamryStage, String username) {
@@ -57,6 +60,10 @@ public class DeviceForm {
         return FXCollections.observableArrayList(devicesAsString);
     }
 
+    /**
+     * Returns value of the device-list combo box
+     * @return String representing combo box value
+     */
     private String getComboboxValue() {
         String value = comboDevices.getValue();
         // todo - will be handled by disabling the register device button until a item in the combo
@@ -67,6 +74,11 @@ public class DeviceForm {
         return value;
     }
 
+    /**
+     * Generated the Scene used for the device form, defines some local controls and initialises non-initialised
+     * private controls.
+     * @return Scene - the device form scene
+     */
     public Scene getScene() {
 
         // Define and configure controls
@@ -104,10 +116,15 @@ public class DeviceForm {
         // Exit button
         Button btnExit = ControlFactory.getButton("Exit", "Shuts down application.");
         btnExit.setOnAction(terminateApplication());
+        // Progress bar used for Backup / Restore / Sync
+        progressBar = new ProgressBar();
+        progressBar.setMaxWidth(300);
+        progressBar.setProgress(0);
+        progressBar.setVisible(false);
 
         // vbox used for alignment in the scene. The parameter '10' is spacing between controls.
         VBox rootVbox = new VBox(10, menu);
-        // todo - maybe make this part of CSS rather than centering programmatically
+        // align the vbox controls to be centered
         rootVbox.setAlignment(Pos.TOP_CENTER);
         // sets background colour for vbox
         //for detailed explanation view AuthenticationForm's getScene function.
@@ -122,6 +139,7 @@ public class DeviceForm {
         rootVbox.getChildren().add(btnRestore);
         rootVbox.getChildren().add(btnExit);
         rootVbox.getChildren().add(linkViewLogs);
+        rootVbox.getChildren().add(progressBar);
 
         scene = new Scene(rootVbox, 360, 510);
 
@@ -167,17 +185,95 @@ public class DeviceForm {
      */
     private EventHandler<ActionEvent> backup() {
         return event -> {
-            try {
-                String path = getComboboxValue();
-                deviceManager.backup(path);
-                Alert alert = new Alert(Alert.AlertType.INFORMATION, "Backup successful");
-                alert.show();
-            } catch (IOException ex) {
-                Alert alert = new Alert(Alert.AlertType.ERROR, "Error during backup " + ex.getMessage());
-                alert.show();
-                ex.printStackTrace();
-            }
+            // JavaFX has a concurrency package that contains a lot of utility to make
+            // the UI interactive and not block while stuff is happening in the background
+            // Like for example copying large files.
+            // The task class allows something to be run a separate thread preventing the UI
+            // from freezing and allowing for a progress bar to be created
+            // source: https://docs.oracle.com/javafx/2/threads/jfxpub-threads.htm#sthref8
+            // source2: https://stackoverflow.com/questions/29844344
+            Task task = new Task<Void>() {
+                @Override public Void call() throws IOException{
+                    deviceManager.backup(getComboboxValue());
+                    // just to fill up the progress bar
+                    updateProgress(100, 100);
+                    return null;
+                }
+            };
+
+            // handle what happens when the tasks stops executing
+            // source: https://stackoverflow.com/a/38476765
+            task.setOnSucceeded(evt -> taskStopped(task.getException(), "Backup", 1));
+            task.setOnCancelled(evt -> taskStopped(task.getException(), "Backup", 2));
+            task.setOnFailed(evt -> taskStopped(task.getException(), "Backup", 3));
+
+
+
+            // disable all the controls before starting the tasks to prevent users
+            // from launching multiple tasks together
+            disableAllControls();
+
+            // the task has to be started in a separate thread to not freeze the device form
+            // source: https://docs.oracle.com/javafx/2/threads/jfxpub-threads.htm#sthref8
+            // source2: https://stackoverflow.com/questions/29844344
+            new Thread(task).start();
+
+            // not the most detailed progress bar, but at-least gives users a sense of the application not stalling
+            progressBar.setVisible(true);
+            progressBar.progressProperty().bind(task.progressProperty());
         };
+    }
+
+    /**
+     * Handles what happens when a backup / restore / sync task has completed
+     * @param t - Throwable object that may contain an excepting thrown during the task's execution
+     * @param taskType - String describing the task
+     * @param status
+     */
+    private void taskStopped(Throwable t, String taskType, int status) {
+
+        String errorMsg = "";
+        if(t != null) {
+            t.printStackTrace();
+            errorMsg = t.getMessage();
+        }
+
+        switch (status) {
+            case 1:
+                new Alert(Alert.AlertType.INFORMATION, taskType + " successful").showAndWait();
+                break;
+            case 2:
+                new Alert(Alert.AlertType.INFORMATION, taskType + " cancelled " + errorMsg).showAndWait();
+                break;
+            case 3:
+                new Alert(Alert.AlertType.ERROR, taskType + " failed " + errorMsg).showAndWait();
+                break;
+            default:
+                new Alert(Alert.AlertType.ERROR, taskType + " experienced unknown problem " + errorMsg).showAndWait();
+        }
+
+        // unbind the progress bar from the progress source and reset the progress bar
+        progressBar.progressProperty().unbind();
+        progressBar.setProgress(0);
+        progressBar.setVisible(false);
+
+        // enable all necessary controls, assumption is that device is registered as if app is
+        // backing up / restoring / syncing then a registered device had to be selected
+        comboDevices.setDisable(false);
+        btnBackup.setDisable(false);
+        btnSync.setDisable(false);
+        btnRestore.setDisable(false);
+    }
+
+    /**
+     * Disables all the controls on the form, except for the exit button and view logs link
+     */
+    private void disableAllControls() {
+        comboDevices.setDisable(true);
+        btnRegisterDevice.setDisable(true);
+        btnBackup.setDisable(true);
+        btnSync.setDisable(true);
+        btnRestore.setDisable(true);
     }
 
     /**
@@ -186,16 +282,35 @@ public class DeviceForm {
      */
     private EventHandler<ActionEvent> sync() {
         return event -> {
-            try {
-                String devicePath = getComboboxValue();
-                deviceManager.synchronise(devicePath);
-                Alert alert = new Alert(Alert.AlertType.INFORMATION, "Sync successful");
-                alert.show();
-            } catch (IOException ex) {
-                Alert alert = new Alert(Alert.AlertType.ERROR, "Error during sync " + ex.getMessage());
-                alert.show();
-                ex.printStackTrace();
-            }
+
+            // wrap sync in a task to avoid app from looking like it has frozen
+            // for detailed explanation view the backup function
+            Task task = new Task<Void>() {
+                @Override public Void call() throws IOException{
+                    deviceManager.synchronise(getComboboxValue());
+                    // just to fill up the progress bar
+                    updateProgress(100, 100);
+                    return null;
+                }
+            };
+
+            // set what happens when the task completes
+            // for detailed explanation view the backup function
+            task.setOnSucceeded(evt -> taskStopped(task.getException(), "Sync", 1));
+            task.setOnCancelled(evt -> taskStopped(task.getException(), "Sync", 2));
+            task.setOnFailed(evt -> taskStopped(task.getException(), "Sync", 3));
+
+            // disable all the controls before starting the tasks to prevent users
+            // from launching multiple tasks together
+            disableAllControls();
+
+            // start the task thread
+            // for detailed explanation view the backup function
+            new Thread(task).start();
+
+            // not the most detailed progress bar, but at-least gives users a sense of the application not stalling
+            progressBar.setVisible(true);
+            progressBar.progressProperty().bind(task.progressProperty());
         };
     }
 
@@ -205,31 +320,50 @@ public class DeviceForm {
      */
     private EventHandler<ActionEvent> restore() {
         return event -> {
-            try {
-                // Create an alert for the type of retoration
-                Alert alert = new Alert(Alert.AlertType.CONFIRMATION, "Choose restoration type.");
-                alert.setTitle("Choose restore method");
-                alert.setHeaderText("Do you want to restore from the last full snapshot, or from they sync folder?");
 
-                ButtonType btnSyncBased = new ButtonType("Sync");
-                ButtonType btnBackupBased = new ButtonType("Backup");
+            // Create an alert for the type of retoration
+            Alert alert = new Alert(Alert.AlertType.CONFIRMATION, "Choose restoration type.");
+            alert.setTitle("Choose restore method");
+            alert.setHeaderText("Do you want to restore from the last full snapshot, or from they sync folder?");
 
-                alert.getButtonTypes().setAll(btnSyncBased, btnBackupBased);
-                Optional<ButtonType> result = alert.showAndWait();
+            ButtonType btnSyncBased = new ButtonType("Sync");
+            ButtonType btnBackupBased = new ButtonType("Backup");
 
-                if (result.get() == btnSyncBased) {
-                    deviceManager.syncRestore(getComboboxValue());
-                } else if (result.get() == btnBackupBased) {
-                    deviceManager.restore(getComboboxValue());
+            alert.getButtonTypes().setAll(btnSyncBased, btnBackupBased);
+            Optional<ButtonType> result = alert.showAndWait();
+
+            // wrap sync in a task to avoid app from looking like it has frozen
+            // for detailed explanation view the backup function
+            Task task = new Task<Void>() {
+                @Override public Void call() throws IOException{
+                    if (result.get() == btnSyncBased) {
+                        deviceManager.syncRestore(getComboboxValue());
+                    } else if (result.get() == btnBackupBased) {
+                        deviceManager.restore(getComboboxValue());
+                    }
+                    // just to fill up the progress bar
+                    updateProgress(100, 100);
+                    return null;
                 }
+            };
 
-                alert = new Alert(Alert.AlertType.INFORMATION, "Restore successful");
-                alert.show();
-            } catch (IOException ex) {
-                Alert alert = new Alert(Alert.AlertType.ERROR, "Error during restore " + ex.getMessage());
-                alert.show();
-                ex.printStackTrace();
-            }
+            // disable all the controls before starting the tasks to prevent users
+            // from launching multiple tasks together
+            disableAllControls();
+
+            // set what happens when the task completes
+            // for detailed explanation view the backup function
+            task.setOnSucceeded(evt -> taskStopped(task.getException(), "Restore", 1));
+            task.setOnCancelled(evt -> taskStopped(task.getException(), "Restore", 2));
+            task.setOnFailed(evt -> taskStopped(task.getException(), "Restore", 3));
+
+            // start the task thread
+            // for detailed explanation view the backup function
+            new Thread(task).start();
+
+            // not the most detailed progress bar, but at-least gives users a sense of the application not stalling
+            progressBar.setVisible(true);
+            progressBar.progressProperty().bind(task.progressProperty());
         };
     }
 
@@ -253,6 +387,7 @@ public class DeviceForm {
      * Updates the device info label to represent the status of the newly selected device
      * Note: this can lead to a IndexOutOfBoundsException in the JavaFX threading, the exception won't
      *       crash the application but will lead to a error not being displayed.
+     *       This is a known JDK8 bug that won't be fixed: https://bugs.openjdk.java.net/browse/JDK-8188899
      * @return ChangeListener that stores functionality to update label when comboboxDevice's value changes
      */
     private ChangeListener<String> comboDevicesChanged() {
@@ -303,7 +438,6 @@ public class DeviceForm {
     }
 
     /**
-     * todo - check if device is in progress of sync or backup before exiting.
      * Exits application
      *
      * @return EventHandler for button click that will call system exit and close the application
@@ -330,12 +464,10 @@ public class DeviceForm {
         menuItem1.setOnAction(changeTheme("/ui/assets/style.css"));
         MenuItem menuItem2 = new MenuItem("Dark Mode");
         menuItem2.setOnAction(changeTheme("/ui/assets/dark.css"));
-        MenuItem menuItem3 = new MenuItem("Colour-blind Mode");
         // todo
         // menuItem3.setOnAction(changeColourTest("/ui/assets/colourblind.css"));
         menuItem.getItems().add(menuItem1);
         menuItem.getItems().add(menuItem2);
-        menuItem.getItems().add(menuItem3);
 
         // http://tutorials.jenkov.com/javafx/menubar.html
         menuBar.getMenus().add(menuItem);
