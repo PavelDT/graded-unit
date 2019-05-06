@@ -12,7 +12,7 @@ import java.util.List;
 /**
  * Authentication mechanism for the backup app
  */
-public class Authentication {
+public class Authentication implements Auth {
 
     private final static String SPLITTER = "@@@";
     // path separator used to keep os cross-compatibility
