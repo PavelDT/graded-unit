@@ -11,6 +11,10 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
+/**
+ * Internal implementation of how to backup / sync / restore files
+ * Interacts with the file system extensively
+ */
 public class BackupManager {
 
     private String user;
@@ -54,10 +58,21 @@ public class BackupManager {
         Logger.addToLog(user, new Date() + " Full backup completed");
     }
 
+    /**
+     * Restores latest backup to specified device
+     * @param pathToDevice - what device to restore to
+     * @throws IOException
+     */
     public void restore(String pathToDevice) throws IOException {
         restore(pathToDevice, findLatestSnapshot());
     }
 
+    /**
+     * Restores selected backup to spefied device
+     * @param pathToDevice - what device to restore to
+     * @param snapshotDate - what backup to restore
+     * @throws IOException
+     */
     public void restore(String pathToDevice, Date snapshotDate) throws IOException {
         Logger.addToLog(user, new Date() + " Started restore");
 
@@ -76,6 +91,11 @@ public class BackupManager {
         Logger.addToLog(user, new Date() + " Completed restore");
     }
 
+    /**
+     * Restores a synced backup to specified device
+     * @param device - what device to sync-restore to
+     * @throws IOException
+     */
     public void syncRestore(Device device) throws IOException {
         Format formatter = new SimpleDateFormat("yyyy-MM-dd");
         String restoreDir = device.getPath() + File.separator + "sync" + File.separator + formatter.format(new Date());
@@ -86,6 +106,11 @@ public class BackupManager {
         Logger.addToLog(user, new Date() + " Completed sync-based restore");
     }
 
+    /**
+     * Utility funtion used during restore to move files from restore folder to device
+     * @param fromSnapshot - path to backup to restore
+     * @param restoreFile - what file to restore to, aka destination file
+     */
     private void restoreToDevice(Path fromSnapshot, Path restoreFile) {
 
         // copy file to device path
@@ -113,7 +138,7 @@ public class BackupManager {
 
     /**
      * Finds latest snapshot backed up for a specific user.
-     * @return
+     * @return Date of latest backup
      */
     private Date findLatestSnapshot() {
         // list all files in backup location, exclude anything that isn't a backup directory
@@ -147,6 +172,11 @@ public class BackupManager {
         return snapshotDates.get(0);
     }
 
+    /**
+     * Syncs dirty files (files previously not synced) to sync folder.
+     * @param device - Device object representing device to sync from
+     * @throws IOException
+     */
     public void synchronise(Device device) throws IOException {
         Logger.addToLog(user, new Date() + " Started file sync");
 
@@ -219,10 +249,11 @@ public class BackupManager {
         }
     }
 
-    /**'
+    /**
      * Copies a file from one location to another, used as a lambda function
      * Has to handle exception as the function is used as part of a java stream.
-     * @param toMove
+     * @param toMove - File to be backed up
+     * @param devicePath - path of device to backup
      */
     private void backFileUp(Path toMove, String devicePath) {
 
@@ -232,10 +263,6 @@ public class BackupManager {
             Format formatter = new SimpleDateFormat("yyyy-MM-dd");
             String date = formatter.format(new Date());
 
-            // have to strip the Drive letter from this.
-            // Windows: C:\dir\file
-            // todo - need to make this work on unix too
-            // OSX: Device/
             // build the path of the file's backup location
             String newLocation = getBackupLocation() + File.separator + date + File.separator + toMove.toString().replace(devicePath, "");
 

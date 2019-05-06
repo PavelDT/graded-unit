@@ -1,5 +1,8 @@
 package backend;
 
+/**
+ * Device object representing a device to be backed up / synced / restored
+ */
 public class Device {
 
     private String path;

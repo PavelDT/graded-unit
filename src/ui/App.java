@@ -4,7 +4,10 @@ import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
 
-// Inheretance, App inhertis from JavaFX's Application
+/**
+ * Inheritance, App inherts from JavaFX's Application
+ * This is the entry point of the application
+ */
 public class App extends Application {
 
     /**
@@ -23,6 +26,10 @@ public class App extends Application {
         primaryStage.show();
     }
 
+    /**
+     * Main function for application, launches JavaFX application object
+     * @param args
+     */
     public static void main(String[] args) {
         launch(args);
     }

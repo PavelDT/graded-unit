@@ -39,7 +39,11 @@ public class DeviceForm {
     private Button btnRestore;
     private ProgressBar progressBar;
 
-    //constructor
+    /**
+     * Non-default constructor
+     * @param priamryStage - primaryStage from JavaFX library
+     * @param username - user's username from AuthenticationForm
+     */
     public DeviceForm(Stage priamryStage, String username) {
         this.primaryStage = priamryStage;
         menu = generateMenu();
@@ -83,7 +87,7 @@ public class DeviceForm {
 
         // Define and configure controls
         // Combo box for devices found, currently hardcoded for demo UI
-        comboDevices = ControlFactory.getComboBox("", "List of detected devices connected to machine.");
+        comboDevices = ControlFactory.getComboBox("List of detected devices connected to machine.");
         // setting values of combo box
         comboDevices.setItems(devicesAsString());
         comboDevices.valueProperty().addListener(comboDevicesChanged());
@@ -476,7 +480,7 @@ public class DeviceForm {
     }
 
     /**
-     * utility that is part of the Menu control
+     * Allows for changing colour theme of application.
      * @param stylesheet - style to apply for the theme change
      * @return An EventHandler for the on-click action
      */

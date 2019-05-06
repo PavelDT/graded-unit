@@ -10,6 +10,9 @@ import org.junit.runners.Suite;
         DeviceTest.class
 })
 
+/**
+ * JUnit test suite for running all unit tests for the backend of the Backup Application
+ */
 public class TestSuite {
     // class stays empty
     // it's only used to hold the suite annotations

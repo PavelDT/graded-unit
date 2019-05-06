@@ -11,10 +11,13 @@ public class Logger {
 
     private static final String pathToLog = System.getProperty("user.home") + File.separator + "Desktop" +  File.separator + "logs" + File.separator;
 
+    /**
+     * Appends line to log for specific user
+     * @param username
+     * @param logLine
+     */
     public static void addToLog(String username, String logLine) {
         try {
-            // todo - check if this writes to just a single line
-            //        or if it adds a new line marker at the end of each line
             File logFile = new File(pathToLog + username);
 
             // check if directory exists
@@ -37,10 +40,13 @@ public class Logger {
         }
     }
 
+    /**
+     * Reads the log for a spefici user
+     * @param username
+     * @return List of Strings representing the log lines.
+     */
     public static List<String> readLog(String username) {
         try {
-            // todo - check if this writes to just a single line
-            //        or if it adds a new line marker at the end of each line
             File logFile = new File(pathToLog + username);
 
             // check if directory exists
@@ -63,6 +69,10 @@ public class Logger {
         }
     }
 
+    /**
+     * Returns path to log
+     * @return path to the log file
+     */
     public static String getPath() {
         return pathToLog;
     }

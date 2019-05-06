@@ -1,6 +1,5 @@
 package backend;
 
-import javax.crypto.spec.PBEKeySpec;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -9,6 +8,10 @@ import java.nio.file.StandardOpenOption;
 import java.util.Base64;
 import java.util.List;
 
+
+/**
+ * Authentication mechanism for the backup app
+ */
 public class Authentication {
 
     final static String SPLITTER = "@@@";
@@ -98,12 +101,22 @@ public class Authentication {
         return 1;
     }
 
+    /**
+     * Created required vault text file to store passwords & user-names
+     * @throws IOException
+     */
     private void createPasswordVault() throws IOException {
         File vault = new File(vaultPath);
         if (!vault.exists())
             vault.createNewFile();
     }
 
+    /**
+     * Checks if the user is already registered
+     * @param username
+     * @return Array of Strings containing 0 - the username, 1 - the password
+     * @throws IOException
+     */
     private String[] userExists(String username) throws IOException {
         List<String> lines = Files.readAllLines(Paths.get(vaultPath));
         // Loop over existing users and search for the currently given username
@@ -116,6 +129,11 @@ public class Authentication {
         return null;
     }
 
+    /**
+     * Applies Base64 encryption to the password
+     * @param password
+     * @return Base64 encrypted string
+     */
     private String encryptPassword(String password) {
         String base64password = Base64.getEncoder().encodeToString(password.getBytes());
         return base64password;

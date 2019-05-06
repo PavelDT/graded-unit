@@ -28,12 +28,21 @@ public class AuthenticationForm {
     private PasswordField txtPassword;
     private Hyperlink link;
 
+    /**
+     * Non-default constructor
+     * @param primaryStage - requires primaryStage from JavaFX library
+     */
     public AuthenticationForm(Stage primaryStage) {
         this.primaryStage = primaryStage;
         this.menu = generateMenu();
         auth = new Authentication();
     }
-    //controls
+
+    /**
+     * Generated the Scene used for the authentication form, defines some local controls and initialises non-initialised
+     * private controls.
+     * @return Scene - the authentication form scene
+     */
     public Scene getScene() {
 
         // Scene controls are declared here as local variables.
@@ -99,16 +108,10 @@ public class AuthenticationForm {
     }
 
     /**
-     * Login function. Checks if username and password are valid.
-     * Upon successful authentication the device form is displayed
-     * Displays error message if auth fails.
-     * @return Returns an EventHandler to handle when the login button is clicked.
+     * Event Handler for clicking on ther "registerLink" link, will hide login button and show
+     * register button.
+     * @return EventHanlder for registerLink link
      */
-
-//    private Button btnLogin;
-//    private TextField txtUsername;
-//    private PasswordField txtPassword;
-//    private Hyperlink link;
     private EventHandler<ActionEvent> registerLink() {
         return event -> {
             // hide login button
@@ -119,8 +122,6 @@ public class AuthenticationForm {
             link.setVisible(false);
             // show register button
             btnRegister.setVisible(true);
-            // display instructions
-            // todo implement
         };
     }
 
@@ -168,9 +169,13 @@ public class AuthenticationForm {
         };
     }
 
-    //do i want to use event handlers or should i do this through lambda functions
-    //Lambda - functional; programming - worth the effort?
-    //action events are external so that the function innitializing controlls is not massive
+    /**
+     * Login function. Checks if username and password are valid.
+     * Upon successful authentication the device form is displayed
+     * Displays error message if auth fails.
+     * Case statuses: -1 for an error, 0 for username / password mismatch, 1 for success, 2 for user doesn't exits
+     * @return Returns an EventHandler to handle when the login button is clicked.
+     */
     private EventHandler<ActionEvent> login() {
         // use lambdas as they're more compact in code
         return event -> {
@@ -182,7 +187,7 @@ public class AuthenticationForm {
             Alert alert = null;
             switch (loggedIn) {
                 case -1:
-                    // do stuff
+                    // Error logging in
                     alert = new Alert(Alert.AlertType.ERROR, "Error during login, please try again.");
                     alert.show();
                     break;
@@ -212,6 +217,7 @@ public class AuthenticationForm {
     /**
      * Switches from the current login scene to the device scene
      * This should be triggered on successful authentication.
+     * @param username - Username of the user that has authenticated
      */
     public void switchToDeviceScene(String username) {
         // hide current form
@@ -229,9 +235,10 @@ public class AuthenticationForm {
      */
     public MenuBar generateMenu() {
         MenuBar menuBar = new MenuBar();
-        // todo - Windows & Linux
         // This makes the native appear more in the style of the operating system
         // It's a usability improvement, keeps things familiar for the user.
+        // Note: adding this to windows creates usability issues with hidden menu items, won't do native
+        // windows menu due to these issues.
         if( System.getProperty("os.name","UNKNOWN").equals("Mac OS X")) {
             menuBar.setUseSystemMenuBar(true);
         }
@@ -253,7 +260,7 @@ public class AuthenticationForm {
     }
 
     /**
-     * utility that is part of the Menu control
+     * Allows for changing colour theme of application.
      * @param stylesheet - style to apply for the theme change
      * @return An EventHandler for the on-click action
      */

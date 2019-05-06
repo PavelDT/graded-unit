@@ -11,8 +11,12 @@ import java.util.List;
 import java.util.UUID;
 import javax.swing.filechooser.FileSystemView;
 
+/**
+ * Device manager's role is to coordinates interaction between UI and backend implemented in BackupManager
+ */
 public class DeviceManager implements BackupApp {
 
+    // private instance variables
     private final String ID_FILE_NAME = "id-tag.txt";
     private String user;
     private BackupManager backupManager;
@@ -23,6 +27,12 @@ public class DeviceManager implements BackupApp {
         this.backupManager = new BackupManager(user);
     }
 
+    /**
+     * Registeres a new device
+     * @param devicePath - path to the device being registered
+     * @return String - representing UUID id of the device
+     * @throws IOException
+     */
     public String registerNew(String devicePath) throws IOException{
         // make a file
         File device = new File(devicePath + ID_FILE_NAME);
@@ -41,10 +51,8 @@ public class DeviceManager implements BackupApp {
     /**
      * Finds all currently connected device
      * @return List of attached Devices
-     * @throws IOException
      */
-    // todo - list only external devices, dont list OS drive and dont list CD Drives / DVD drives etc.
-    public List<Device>scanForDevices() {
+    public List<Device> scanForDevices() {
 
         List<Device> devices = new ArrayList<Device>();
 
@@ -73,31 +81,61 @@ public class DeviceManager implements BackupApp {
         return devices;
     }
 
+    /**
+     * Restore a specified backup to the selected device
+     * @param pathToDevice - path to the device being registered
+     * @param date - date for backup to restore
+     * @throws IOException
+     */
     public void restore(String pathToDevice, String date) throws IOException {
         // todo... add the ability for a user to specify
         //         a date using the UI
         backupManager.restore(pathToDevice, null);
     }
 
+    /**
+     * Restore latest backup to the selected device
+     * @param pathToDevice - path to the device being registered
+     * @throws IOException
+     */
     public void restore(String pathToDevice) throws IOException {
         // date and id
         backupManager.restore(pathToDevice);
     }
 
-    public void syncRestore(String path) throws IOException {
-        Device device = new Device(path, readId(path));
+    /**
+     * Sync-restore latest backup to the selected device
+     * @param devicePath - path to the device being registered
+     * @throws IOException
+     */
+    public void syncRestore(String devicePath) throws IOException {
+        Device device = new Device(devicePath, readId(devicePath));
         backupManager.syncRestore(device);
     }
 
-    public void backup(String path) throws IOException {
-        Device device = new Device(path, readId(path));
+    /**
+     * Full backup of all device data for selected device
+     * @param devicePath - path to the device being registered
+     * @throws IOException
+     */
+    public void backup(String devicePath) throws IOException {
+        Device device = new Device(devicePath, readId(devicePath));
         backupManager.createBackup(device);
     }
 
-    public void synchronise(String path) throws IOException {
-        backupManager.synchronise(new Device(path, readId(path)));
+    /**
+     * Syncs dirty files (files previously not synced) to sync folder.
+     * @param devicePath - path to the device being synced
+     * @throws IOException
+     */
+    public void synchronise(String devicePath) throws IOException {
+        backupManager.synchronise(new Device(devicePath, readId(devicePath)));
     }
 
+    /**
+     * Generates UUID based id as a string
+     * @return String representing id
+     */
     private String generateId() {
         String uuid = UUID.randomUUID().toString().replace("-", "");
         return uuid;
@@ -106,8 +144,8 @@ public class DeviceManager implements BackupApp {
     /**
      * Tries to read id of a device, if it reads id, device is register
      * otherwise the device is new and un-registered
-     * @throws IOException - push the exception to caller function, shouldn't be handled here
      * @return Id of device
+     * @throws IOException - push the exception to caller function, shouldn't be handled here
      */
     public String readId(String devicePath) {
         Path path = Paths.get(devicePath + ID_FILE_NAME);
