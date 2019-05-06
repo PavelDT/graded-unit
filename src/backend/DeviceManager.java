@@ -31,7 +31,7 @@ public class DeviceManager implements BackupApp {
      * Registeres a new device
      * @param devicePath - path to the device being registered
      * @return String - representing UUID id of the device
-     * @throws IOException
+     * @throws IOException - If a file cannot be read / written
      */
     public String registerNew(String devicePath) throws IOException{
         // make a file
@@ -85,7 +85,7 @@ public class DeviceManager implements BackupApp {
      * Restore a specified backup to the selected device
      * @param pathToDevice - path to the device being registered
      * @param date - date for backup to restore
-     * @throws IOException
+     * @throws IOException - If a file cannot be read / written
      */
     public void restore(String pathToDevice, String date) throws IOException {
         // todo... add the ability for a user to specify
@@ -96,7 +96,7 @@ public class DeviceManager implements BackupApp {
     /**
      * Restore latest backup to the selected device
      * @param pathToDevice - path to the device being registered
-     * @throws IOException
+     * @throws IOException - If a file cannot be read / written
      */
     public void restore(String pathToDevice) throws IOException {
         // date and id
@@ -106,7 +106,7 @@ public class DeviceManager implements BackupApp {
     /**
      * Sync-restore latest backup to the selected device
      * @param devicePath - path to the device being registered
-     * @throws IOException
+     * @throws IOException - If a file cannot be read / written
      */
     public void syncRestore(String devicePath) throws IOException {
         Device device = new Device(devicePath, readId(devicePath));
@@ -116,7 +116,7 @@ public class DeviceManager implements BackupApp {
     /**
      * Full backup of all device data for selected device
      * @param devicePath - path to the device being registered
-     * @throws IOException
+     * @throws IOException - If a file cannot be read / written
      */
     public void backup(String devicePath) throws IOException {
         Device device = new Device(devicePath, readId(devicePath));
@@ -126,7 +126,7 @@ public class DeviceManager implements BackupApp {
     /**
      * Syncs dirty files (files previously not synced) to sync folder.
      * @param devicePath - path to the device being synced
-     * @throws IOException
+     * @throws IOException - If a file cannot be read / written
      */
     public void synchronise(String devicePath) throws IOException {
         backupManager.synchronise(new Device(devicePath, readId(devicePath)));
@@ -144,8 +144,8 @@ public class DeviceManager implements BackupApp {
     /**
      * Tries to read id of a device, if it reads id, device is register
      * otherwise the device is new and un-registered
+     * @param devicePath - path to device
      * @return Id of device
-     * @throws IOException - push the exception to caller function, shouldn't be handled here
      */
     public String readId(String devicePath) {
         Path path = Paths.get(devicePath + ID_FILE_NAME);

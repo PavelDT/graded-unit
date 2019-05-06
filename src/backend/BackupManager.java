@@ -19,14 +19,17 @@ public class BackupManager {
 
     private String user;
 
-    // Constructor
+    /**
+     * Custom constructor
+     * @param user - username of user backing data up
+     */
     public BackupManager(String user){
         this.user = user;
     }
 
     /**
      * Returns backup location
-     * @return
+     * @return String representing path to backup location
      */
     private String getBackupLocation() {
         return System.getProperty("user.home") + File.separator + "Desktop" +  File.separator + "backups" + File.separator + user;
@@ -34,7 +37,7 @@ public class BackupManager {
 
     /**
      * Returns sync location
-     * @return
+     * @return String representing path to sync location
      */
     private String getSyncLocation() {
         return System.getProperty("user.home") + File.separator + "Desktop" +  File.separator + "syncs" + File.separator + user;
@@ -43,6 +46,7 @@ public class BackupManager {
     /**
      * Creates a full backup of the device's files to backup location.
      * @param device The device which is being backed up
+     * @throws IOException - If a file cannot be read / written
      */
     public void createBackup(Device device) throws IOException {
 
@@ -61,7 +65,7 @@ public class BackupManager {
     /**
      * Restores latest backup to specified device
      * @param pathToDevice - what device to restore to
-     * @throws IOException
+     * @throws IOException - If a file cannot be read / written
      */
     public void restore(String pathToDevice) throws IOException {
         restore(pathToDevice, findLatestSnapshot());
@@ -71,7 +75,7 @@ public class BackupManager {
      * Restores selected backup to spefied device
      * @param pathToDevice - what device to restore to
      * @param snapshotDate - what backup to restore
-     * @throws IOException
+     * @throws IOException - If a file cannot be read / written
      */
     public void restore(String pathToDevice, Date snapshotDate) throws IOException {
         Logger.addToLog(user, new Date() + " Started restore");
@@ -94,7 +98,7 @@ public class BackupManager {
     /**
      * Restores a synced backup to specified device
      * @param device - what device to sync-restore to
-     * @throws IOException
+     * @throws IOException - If a file cannot be read / written
      */
     public void syncRestore(Device device) throws IOException {
         Format formatter = new SimpleDateFormat("yyyy-MM-dd");
@@ -175,7 +179,7 @@ public class BackupManager {
     /**
      * Syncs dirty files (files previously not synced) to sync folder.
      * @param device - Device object representing device to sync from
-     * @throws IOException
+     * @throws IOException - If a file cannot be read / written
      */
     public void synchronise(Device device) throws IOException {
         Logger.addToLog(user, new Date() + " Started file sync");
@@ -240,7 +244,7 @@ public class BackupManager {
 
     /**
      * Checks if backup directory exists, creates backup directory if not.
-     * @throws IOException
+     * @throws IOException - If a file cannot be read / written
      */
     public void backupCheck() throws IOException {
         File f = new File(getBackupLocation());

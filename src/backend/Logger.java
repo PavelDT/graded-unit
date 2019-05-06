@@ -13,8 +13,8 @@ public class Logger {
 
     /**
      * Appends line to log for specific user
-     * @param username
-     * @param logLine
+     * @param username - username to be used for building directory path of the log
+     * @param logLine - text to be logged
      */
     public static void addToLog(String username, String logLine) {
         try {
@@ -42,7 +42,7 @@ public class Logger {
 
     /**
      * Reads the log for a spefici user
-     * @param username
+     * @param username - username to be used for building directory path of the log
      * @return List of Strings representing the log lines.
      */
     public static List<String> readLog(String username) {

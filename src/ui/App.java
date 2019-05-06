@@ -13,7 +13,7 @@ public class App extends Application {
     /**
      * The start function is part of JavaFX's Application class. As it's abstract it has to be overriden
      * The function starts the UI application.
-     * @param primaryStage
+     * @param primaryStage - Initial application stage
      */
     @Override
     public void start(Stage primaryStage) {
@@ -28,7 +28,7 @@ public class App extends Application {
 
     /**
      * Main function for application, launches JavaFX application object
-     * @param args
+     * @param args Arguments to main
      */
     public static void main(String[] args) {
         launch(args);

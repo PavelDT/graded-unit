@@ -41,11 +41,11 @@ public class DeviceForm {
 
     /**
      * Non-default constructor
-     * @param priamryStage - primaryStage from JavaFX library
+     * @param primaryStage - primaryStage from JavaFX library
      * @param username - user's username from AuthenticationForm
      */
-    public DeviceForm(Stage priamryStage, String username) {
-        this.primaryStage = priamryStage;
+    public DeviceForm(Stage primaryStage, String username) {
+        this.primaryStage = primaryStage;
         menu = generateMenu();
         this.username = username;
         deviceManager = new DeviceManager(username);
@@ -232,7 +232,7 @@ public class DeviceForm {
      * Handles what happens when a backup / restore / sync task has completed
      * @param t - Throwable object that may contain an excepting thrown during the task's execution
      * @param taskType - String describing the task
-     * @param status
+     * @param status - how did the task complete? 1 - success, 2 - cancelled, 3 - error.
      */
     private void taskStopped(Throwable t, String taskType, int status) {
 
@@ -443,7 +443,6 @@ public class DeviceForm {
 
     /**
      * Exits application
-     *
      * @return EventHandler for button click that will call system exit and close the application
      */
     private EventHandler<ActionEvent> terminateApplication() {

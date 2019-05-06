@@ -16,7 +16,7 @@ public class OSUtility {
 
     /**
      * Checks if current os is Windows based
-     * @return @return boolean representing if current os is Windows
+     * @return boolean representing if current os is Windows
      */
     public static boolean isWindows() {
         String osName = System.getProperty("os.name").toLowerCase();

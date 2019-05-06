@@ -25,8 +25,8 @@ public class Authentication {
 
     /**
      * Checks if user is already registered to use backup application
-     * @param username
-     * @param password
+     * @param username - user's inputted username
+     * @param password - user's inputted password
      * @return -1 for an error, 0 for username / password mismatch, 1 for success, 2 for user doesn't exits
      */
     public int logIn(String username, String password){
@@ -60,8 +60,8 @@ public class Authentication {
 
     /**
      * Allow new user to register for the application
-     * @param username
-     * @param password
+     * @param username - user's inputted username
+     * @param password - user's inputted password
      * @return -1 for error, 0 for fail due to username being taken, 1 for successful registration,
      *         2 for invalid username, 3 for invalid password.
      */
@@ -102,8 +102,8 @@ public class Authentication {
     }
 
     /**
-     * Created required vault text file to store passwords & user-names
-     * @throws IOException
+     * Created required vault text file to store passwords and user-names
+     * @throws IOException - If a file cannot be read / written
      */
     private void createPasswordVault() throws IOException {
         File vault = new File(vaultPath);
@@ -113,9 +113,9 @@ public class Authentication {
 
     /**
      * Checks if the user is already registered
-     * @param username
+     * @param username - username to be checked for existence
      * @return Array of Strings containing 0 - the username, 1 - the password
-     * @throws IOException
+     * @throws IOException - If a file cannot be read / written
      */
     private String[] userExists(String username) throws IOException {
         List<String> lines = Files.readAllLines(Paths.get(vaultPath));
@@ -131,7 +131,7 @@ public class Authentication {
 
     /**
      * Applies Base64 encryption to the password
-     * @param password
+     * @param password - password to be encrypted
      * @return Base64 encrypted string
      */
     private String encryptPassword(String password) {
@@ -141,7 +141,7 @@ public class Authentication {
 
     /**
      * Checks if username is valid, usernames must contain only numbers and letters
-     * @param username
+     * @param username - username to be validated
      * @return boolean if username is valid
      */
     private boolean validateUsername(String username) {
@@ -152,7 +152,7 @@ public class Authentication {
 
     /**
      * Checks if password is long enough
-     * @param password
+     * @param password - password to be validated
      * @return If password is strong enough
      */
     private boolean validatePassword(String password) {
