@@ -14,9 +14,9 @@ import java.util.List;
  */
 public class Authentication {
 
-    final static String SPLITTER = "@@@";
+    private final static String SPLITTER = "@@@";
     // path separator used to keep os cross-compatibility
-    final static String vaultPath = System.getProperty("user.home") + File.separator + "Desktop" +  File.separator + "vault.txt";
+    private final static String vaultPath = System.getProperty("user.home") + File.separator + "Desktop" +  File.separator + "vault.txt";
 
     // default constructor
     public Authentication() {

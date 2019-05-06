@@ -8,11 +8,6 @@ import javafx.scene.control.*;
  */
 public class ControlFactory {
 
-    // width of password and text field controls
-    private static final double TXT_WIDTH = 250.0d;
-    // width of button controls
-    private static final double BTN_WIDTH = 250.0d;
-
     /**
      * Gets a text field control
      * @param text - default control text
